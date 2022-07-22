@@ -374,7 +374,7 @@ with tab_params:
     st.write('Brand:', my_brand)
     st.write('Manager:', my_manager)
     st.write('Group:', my_group)    
-    st.write('Makr:', my_mark)
+    st.write('Mark:', my_mark)
 
 
 ## ------ EXPORT TO EXCEL ------
