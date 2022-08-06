@@ -4,12 +4,11 @@ import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import seaborn as sns
 import io
 import time
 from datasets import DataSets
-
-start_time = time.time()
-print("Loading...", end="")
 
 DEBUG = True
 def log(s: str):
@@ -21,9 +20,16 @@ st.set_page_config(layout="wide")
 tab_graphs, tab_df, tab_params = st.tabs(["Graphs", "DataFrame", "Parameters"])
 
 ## ------------- DATA LOADING ------------
-if 'datasets' not in st.session_state:
-    log("Reloading datasets...")
-    st.session_state['datasets'] = DataSets()
+@st.experimental_singleton
+def load_data():
+    """
+    Purpose: load/pull datasets
+    """
+    if 'datasets' not in st.session_state:
+        log("Reloading datasets...")
+        return DataSets()
+
+st.session_state['datasets'] = load_data()
 
 df_sales = st.session_state['datasets'].df_sales
 df_products = st.session_state['datasets'].df_products
@@ -35,6 +41,7 @@ manager_dict = st.session_state['datasets'].manager_dict
 group_dict = st.session_state['datasets'].group_dict
 channel_dict = st.session_state['datasets'].channel_dict
 mark_dict = st.session_state['datasets'].mark_dict
+
 
 ## --------------- SIDEBAR -----------------
 months_backward = 6
@@ -63,6 +70,7 @@ dt_fact = st.sidebar.date_input("📆 Fact Interval",
                           [date_fact_start,
                            date_fact_end] )
 
+
 ## ----------------- AXES ---------------------
 st.sidebar.markdown('---')
 axes_options = {
@@ -76,6 +84,7 @@ axes_options = {
 
 x_ax = st.sidebar.selectbox("➡️ what's on the X axis?", list(axes_options.keys()), 2)
 y_ax = st.sidebar.selectbox("⬆️ what's on the Y axis?", list(axes_options.keys()), 0)
+
 
 ## -------------- SIDEBAR FILTERS -------------
 st.sidebar.markdown('---')
@@ -91,6 +100,8 @@ m_mark = st.sidebar.multiselect("Mark", pd.Series(mark_dict) )
 # log(f"FILTERS:\nm_dept: {m_dept}\n, m_channel: {m_channel}\n, m_brand: {m_brand}\n, m_manager: {m_manager}\n, m_group: {m_group}\n, m_mark: {m_mark}\n")
 
 with tab_graphs:
+    start_time = time.time()
+    print("Processing tab_graphs...", end="")
     st.markdown("# Factor analysis demo 🔐 ")
     left_column, mid_column, right_column = st.columns(3)
     left_column.markdown(
@@ -145,8 +156,8 @@ with tab_graphs:
     if my_mark:
         d_a = df_sales.loc[df_sales.id_mark.isin(my_mark)]
 
-    d_b = d_a.loc[(d_a.DocumentDate >= date_base_start) & (d_a.DocumentDate <= date_base_end_convert)].copy(deep=True)
-    d_f = d_a.loc[(d_a.DocumentDate >= date_fact_start) & (d_a.DocumentDate <= date_fact_end_convert)].copy(deep=True)
+    d_b = d_a.loc[(d_a.DocumentDate >= date_base_start) & (d_a.DocumentDate <= date_base_end_convert)] #.copy(deep=True)
+    d_f = d_a.loc[(d_a.DocumentDate >= date_fact_start) & (d_a.DocumentDate <= date_fact_end_convert)] #.copy(deep=True)
 
     d_b = d_b.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
     d_f = d_f.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
@@ -288,100 +299,55 @@ with tab_graphs:
         f"> ⍨"
         )
 
-    log(f"loading data took {time.time() - start_time} seconds")
+    log(f"took {time.time() - start_time} seconds")
 
     # DRAWING
-    print("Drawing...", end="")
-    start_time = time.time()
-    left_col, mid_col, right_col = st.columns(3)
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
+    
+    sns.heatmap(pivot_price.corr(), ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt=".1f", linewidths=.5)
+    sns.heatmap(pivot_cost.corr(), ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt=".1f", linewidths=.5)
+    sns.heatmap(pivot_vol.corr(), ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt=".1f", linewidths=.5)
 
-    with left_col:
-        data = go.Heatmap(
-                    x = pivot_price.columns.tolist(),
-                    y = pivot_price.index.tolist(),
-                    z = pivot_price.values.tolist(),
-                    zmid=0,
-                    xgap=3,
-                    ygap=3,
-                    colorscale='RdBu'            
-                )
-        layout = go.Layout(                    
-                    title={'text':'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), 'xanchor':'left','yanchor':'bottom', 'y':0.87},
-                    titlefont=dict(size=20, color='#518cc8'),
-                    xaxis=dict(showgrid=False, tickangle = angle),
-                    yaxis=dict(showgrid=False, categoryorder='category descending'),
-                    font=dict(size=11),                   
-                    height= 550,
-                    width=550,
-                    margin=dict(l=0, b=0),                    
-                )
-        fig = go.Figure(data=[data], layout=layout)
-        st.plotly_chart(fig, use_container_width=False)
+    ax[0].set_title(f'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), c='#518cc8')
+    ax[1].set_title(f'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), c='#518cc8')
+    ax[2].set_title(f'Structure influence   ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), c='#518cc8')
+    
+    ax[0].set_xlabel(x_ax)
+    ax[1].set_xlabel(x_ax)
+    ax[2].set_xlabel(x_ax)
+    
+    ax[0].set_ylabel(y_ax)
+    ax[1].set_ylabel("")
+    ax[2].set_ylabel("")
 
-    with mid_col:
-        data = go.Heatmap(
-                    x = pivot_cost.columns.tolist(),
-                    y = pivot_cost.index.tolist(),
-                    z = pivot_cost.values.tolist(),
-                    zmid=0,
-                    xgap=3,
-                    ygap=3,
-                    colorscale='RdBu'            
-                )
-        layout = go.Layout(                    
-                    title={'text':'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), 'xanchor':'left','yanchor':'bottom', 'y':0.87},
-                    titlefont=dict(size=20, color='#518cc8'),
-                    xaxis=dict(showgrid=False, tickangle = angle),
-                    yaxis=dict(showgrid=False, categoryorder='category descending'),
-                    font=dict(size=11),                   
-                    height= 550,
-                    width=550,
-                    margin=dict(l=0, b=0),                    
-                )
-        fig = go.Figure(data=[data], layout=layout)
-        st.plotly_chart(fig, use_container_width=False)
+    st.pyplot(fig)
 
-    with right_col:
-        data = go.Heatmap(
-                    x = pivot_vol.columns.tolist(),
-                    y = pivot_vol.index.tolist(),
-                    z = pivot_vol.values.tolist(),
-                    zmid=0,
-                    xgap=3,
-                    ygap=3,
-                    colorscale='RdBu'            
-                )
-        layout = go.Layout(                    
-                    title={'text':'Structure influence   ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), 'xanchor':'left','yanchor':'bottom', 'y':0.87},
-                    titlefont=dict(size=20, color='#518cc8'),
-                    xaxis=dict(showgrid=False, tickangle = angle),
-                    yaxis=dict(showgrid=False, categoryorder='category descending'),
-                    font=dict(size=11),                   
-                    height= 550,
-                    width=550,
-                    margin=dict(l=0, b=0),                    
-                )
-        fig = go.Figure(data=[data], layout=layout)
-        st.plotly_chart(fig, use_container_width=False)
-        log(f"took: {time.time() - start_time} seconds")
+
 # show df
 with tab_df:
-    st.markdown('# Output DataFrame')  
+    st.markdown('# Output DataFrames')
 
-    # st.write("Shape:", dm1.shape)
-    # st.dataframe(dm1.head(1000))
+    st.markdown('### Price:')
+    st.table(pivot_price)
+    st.markdown('### Cost:')
+    st.table(pivot_cost)
+    st.markdown('### Volume:')
+    st.table(pivot_vol)
+
+    st.write("dm shape:", dm1.shape)
 
 # debug info
 with tab_params:
     st.markdown('# Parameters and Filters')
-    # st.write('Axis Х:', x_ax)
-    # st.write('Axis У:', y_ax)
-    # st.write('Branch:', my_dept)
-    # st.write('Channel:', my_channel)
-    # st.write('Brand:', my_brand)
-    # st.write('Manager:', my_manager)
-    # st.write('Group:', my_group)    
-    # st.write('Mark:', my_mark)
+    st.write('Axis Х:', x_ax)
+    st.write('Axis У:', y_ax)
+    st.write('Branch:', my_dept)
+    st.write('Channel:', my_channel)
+    st.write('Brand:', my_brand)
+    st.write('Manager:', my_manager)
+    st.write('Group:', my_group)    
+    st.write('Mark:', my_mark)
 
 
 ## ------ EXPORT TO EXCEL ------
@@ -409,10 +375,10 @@ def calc_export():
     strIO.seek(0)
     return strIO
 
-st.sidebar.markdown('---')
-st.sidebar.download_button( label="💾 Export to excel", 
-                            data=calc_export(),
-                            file_name='profit_analysis.xlsx',
-                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        )
-st.sidebar.markdown('---')
+# st.sidebar.markdown('---')
+# st.sidebar.download_button( label="💾 Export to excel", 
+#                             data=calc_export(),
+#                             file_name='profit_analysis.xlsx',
+#                             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+#                         )
+# st.sidebar.markdown('---')
