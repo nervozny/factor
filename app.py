@@ -5,6 +5,8 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+from matplotlib.ticker import EngFormatter
+fmt = EngFormatter(places=1)
 import seaborn as sns
 import io
 import time
@@ -300,23 +302,24 @@ with tab_graphs:
     log(f"took {time.time() - start_time} seconds")
 
     # DRAWING
-    drawing_method = st.radio(label="Drawing method:", options=['Seaborn', 'Plotly'], index=0)
+    drawing_method = st.radio(label="Drawing method:", options=['Seaborn', 'Plotly'], index=1)
 
     if drawing_method=="Seaborn":
         plt.style.use('ggplot')
-        fig, ax = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
-        
-        sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
-        sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
-        sns.heatmap(pivot_vol, ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt=".0", linewidths=.5)
+        fig, ax = plt.subplots(1, 3, figsize=(20, 5), constrained_layout=True)
+        fig.subplots_adjust(hspace=0.5, wspace=0.25)
 
         ax[0].set_title(f'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), c='#518cc8')
         ax[1].set_title(f'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), c='#518cc8')
-        ax[2].set_title(f'Structure influence   ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), c='#518cc8')
+        ax[2].set_title(f'Structure influence ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), c='#518cc8')
+
+        sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt='.0f', linewidths=.5)
+        sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt='.0f', linewidths=.5, yticklabels=False)
+        sns.heatmap(pivot_vol.applymap(lambda x: x/1000), ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt='.1f', linewidths=.5, yticklabels=False)
         
         ax[0].set_xlabel(x_ax)
         ax[1].set_xlabel(x_ax)
-        ax[2].set_xlabel(x_ax)
+        ax[2].set_xlabel(x_ax + " (thousands)")
         
         ax[0].set_ylabel(y_ax)
         ax[1].set_ylabel("")
