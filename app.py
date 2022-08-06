@@ -305,9 +305,9 @@ with tab_graphs:
     plt.style.use('ggplot')
     fig, ax = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
     
-    sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt=".1f", linewidths=.5)
-    sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt=".1f", linewidths=.5)
-    sns.heatmap(pivot_vol, ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt=".1f", linewidths=.5)
+    sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
+    sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
+    sns.heatmap(pivot_vol, ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt=".0", linewidths=.5)
 
     ax[0].set_title(f'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), c='#518cc8')
     ax[1].set_title(f'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), c='#518cc8')
@@ -375,10 +375,10 @@ def calc_export():
     strIO.seek(0)
     return strIO
 
-st.sidebar.markdown('---')
-st.sidebar.download_button( label="💾 Export to excel", 
-                            data=calc_export(),
-                            file_name='profit_analysis.xlsx',
-                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        )
-st.sidebar.markdown('---')
+# st.sidebar.markdown('---')
+# st.sidebar.download_button( label="💾 Export to excel", 
+#                             data=calc_export(),
+#                             file_name='profit_analysis.xlsx',
+#                             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+#                         )
+# st.sidebar.markdown('---')
