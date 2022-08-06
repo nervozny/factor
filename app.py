@@ -5,30 +5,36 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import plotly.graph_objects as go
 import io
+import time
+from datasets import DataSets
 
-## ------------- DATA LOADING ------------
-df_sales = pd.read_parquet('data/df-sales.pq')
-df_products = pd.read_parquet('data/products.pq')
-df_clients = pd.read_parquet('data/clients.pq')
+start_time = time.time()
+print("Loading...", end="")
 
-branch_dict = pd.read_csv('data/branch.csv', index_col=0, header=None, names=['id', 'name'])['name'].to_dict()
-brand_dict = pd.read_csv('data/brand.csv', index_col=0, header=None, names=['id', 'name'])['name'].to_dict()
-manager_dict = pd.read_csv('data/manager.csv', index_col=0, header=None, names=['id', 'name'])['name'].to_dict()
-group_dict = pd.read_csv('data/group.csv', index_col=0, header=None, names=['id', 'name'])['name'].to_dict()
-channel_dict = pd.read_csv('data/channel.csv', index_col=0, header=None, names=['id', 'name'])['name'].to_dict()
-mark_dict = pd.read_csv('data/mark.csv', index_col=0, header=None, names=['id', 'name'])['name'].to_dict()
-
-## -------- Assemble working Dataframe ---------
-df_sales['id_branch'] = df_sales['id_client'].map(df_clients['id_branch'].to_dict())
-df_sales['id_channel'] = df_sales['id_client'].map(df_clients['id_channel'].to_dict())
-df_sales['id_brand'] = df_sales['id_commodity'].map(df_products['id_brand'].to_dict())
-df_sales['id_group'] = df_sales['id_commodity'].map(df_products['id_group'].to_dict())
-df_sales['id_manager'] = df_sales['id_commodity'].map(df_products['id_manager'].to_dict())
-df_sales['id_mark'] = df_sales['id_commodity'].map(df_products['id_mark'].to_dict())
+DEBUG = True
+def log(s: str):
+    if DEBUG:
+        print(s)
 
 ## -------------- SETTING LAYOUT ---------------
 st.set_page_config(layout="wide")
 tab_graphs, tab_df, tab_params = st.tabs(["Graphs", "DataFrame", "Parameters"])
+
+## ------------- DATA LOADING ------------
+if 'datasets' not in st.session_state:
+    log("Reloading datasets...")
+    st.session_state['datasets'] = DataSets()
+
+df_sales = st.session_state['datasets'].df_sales
+df_products = st.session_state['datasets'].df_products
+df_clients = st.session_state['datasets'].df_clients
+
+branch_dict = st.session_state['datasets'].branch_dict
+brand_dict = st.session_state['datasets'].brand_dict
+manager_dict = st.session_state['datasets'].manager_dict
+group_dict = st.session_state['datasets'].group_dict
+channel_dict = st.session_state['datasets'].channel_dict
+mark_dict = st.session_state['datasets'].mark_dict
 
 ## --------------- SIDEBAR -----------------
 months_backward = 6
@@ -76,11 +82,13 @@ st.sidebar.markdown('---')
 
 # Dropbox dictionaries
 m_dept = st.sidebar.multiselect("Branch", pd.Series(branch_dict) )
-m_channel = st.sidebar.multiselect("Channel", pd.Series(channel_dict)) #, default='DIY')
+m_channel = st.sidebar.multiselect("Channel", pd.Series(channel_dict), default='DIY')
 m_brand = st.sidebar.multiselect("Brand", pd.Series(brand_dict) )
 m_manager = st.sidebar.multiselect("Manager", pd.Series(manager_dict) )
 m_group = st.sidebar.multiselect("Group", pd.Series(group_dict) )
 m_mark = st.sidebar.multiselect("Mark", pd.Series(mark_dict) )
+
+# log(f"FILTERS:\nm_dept: {m_dept}\n, m_channel: {m_channel}\n, m_brand: {m_brand}\n, m_manager: {m_manager}\n, m_group: {m_group}\n, m_mark: {m_mark}\n")
 
 with tab_graphs:
     st.markdown("# Factor analysis demo 🔐 ")
@@ -280,7 +288,11 @@ with tab_graphs:
         f"> ⍨"
         )
 
+    log(f"loading data took {time.time() - start_time} seconds")
+
     # DRAWING
+    print("Drawing...", end="")
+    start_time = time.time()
     left_col, mid_col, right_col = st.columns(3)
 
     with left_col:
@@ -351,25 +363,25 @@ with tab_graphs:
                 )
         fig = go.Figure(data=[data], layout=layout)
         st.plotly_chart(fig, use_container_width=False)
-
+        log(f"took: {time.time() - start_time} seconds")
 # show df
 with tab_df:
     st.markdown('# Output DataFrame')  
 
-    st.write("Shape:", dm1.shape)
-    st.dataframe(dm1.head(1000))
+    # st.write("Shape:", dm1.shape)
+    # st.dataframe(dm1.head(1000))
 
 # debug info
 with tab_params:
     st.markdown('# Parameters and Filters')
-    st.write('Axis Х:', x_ax)
-    st.write('Axis У:', y_ax)
-    st.write('Branch:', my_dept)
-    st.write('Channel:', my_channel)
-    st.write('Brand:', my_brand)
-    st.write('Manager:', my_manager)
-    st.write('Group:', my_group)    
-    st.write('Mark:', my_mark)
+    # st.write('Axis Х:', x_ax)
+    # st.write('Axis У:', y_ax)
+    # st.write('Branch:', my_dept)
+    # st.write('Channel:', my_channel)
+    # st.write('Brand:', my_brand)
+    # st.write('Manager:', my_manager)
+    # st.write('Group:', my_group)    
+    # st.write('Mark:', my_mark)
 
 
 ## ------ EXPORT TO EXCEL ------
