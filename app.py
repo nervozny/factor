@@ -3,14 +3,14 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import plotly.graph_objects as go
+# import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import seaborn as sns
 import io
 import time
 from datasets import DataSets
 
-DEBUG = True
+DEBUG = False
 def log(s: str):
     if DEBUG:
         print(s)
@@ -101,7 +101,7 @@ m_mark = st.sidebar.multiselect("Mark", pd.Series(mark_dict) )
 
 with tab_graphs:
     start_time = time.time()
-    print("Processing tab_graphs...", end="")
+    # print("Processing tab_graphs...", end="")
     st.markdown("# Factor analysis demo 🔐 ")
     left_column, mid_column, right_column = st.columns(3)
     left_column.markdown(
@@ -144,20 +144,20 @@ with tab_graphs:
     d_a = df_sales
 
     if my_dept: 
-        d_a = df_sales.loc[df_sales.id_branch.isin(my_dept)]
+        d_a = d_a.loc[d_a.id_branch.isin(my_dept)]
     if my_channel:
-        d_a = df_sales.loc[df_sales.id_channel.isin(my_channel)]
+        d_a = d_a.loc[d_a.id_channel.isin(my_channel)]
     if my_brand:
-        d_a = df_sales.loc[df_sales.id_brand.isin(my_brand)]
+        d_a = d_a.loc[d_a.id_brand.isin(my_brand)]
     if my_manager:
-        d_a = df_sales.loc[df_sales.id_manager.isin(my_manager)]
+        d_a = d_a.loc[d_a.id_manager.isin(my_manager)]
     if my_group:
-        d_a = df_sales.loc[df_sales.id_group.isin(my_group)]
+        d_a = d_a.loc[d_a.id_group.isin(my_group)]
     if my_mark:
-        d_a = df_sales.loc[df_sales.id_mark.isin(my_mark)]
+        d_a = d_a.loc[d_a.id_mark.isin(my_mark)]
 
-    d_b = d_a.loc[(d_a.DocumentDate >= date_base_start) & (d_a.DocumentDate <= date_base_end_convert)] #.copy(deep=True)
-    d_f = d_a.loc[(d_a.DocumentDate >= date_fact_start) & (d_a.DocumentDate <= date_fact_end_convert)] #.copy(deep=True)
+    d_b = d_a.loc[(d_a.DocumentDate >= date_base_start) & (d_a.DocumentDate <= date_base_end_convert)].copy(deep=True)
+    d_f = d_a.loc[(d_a.DocumentDate >= date_fact_start) & (d_a.DocumentDate <= date_fact_end_convert)].copy(deep=True)
 
     d_b = d_b.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
     d_f = d_f.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
@@ -196,11 +196,9 @@ with tab_graphs:
 
 
     # adding reference cols
-    # my_cols_eng = ['ID_product', 'Article', 'Brand', 'Product_group', 'Mark', 'Manager_Marketing', 'Manager_Supply', 'ABC_XYZ']
     my_cols_eng = ['Article', 'Brand', 'Product_group', 'Mark', 'Manager_Marketing', 'Manager_Supply', 'ABC_XYZ']
     my_cl_cols_eng = ['id_branch', 'Channel', 'Client_name']
 
-    # dm1 = df_products[my_cols_eng].set_index('ID_product').join(dm.set_index('id_commodity'), how='right').reset_index().set_index('id_client').join(df_clients[my_cl_cols_eng]).reset_index()
     dm1 = df_products[my_cols_eng].join(dm.set_index('id_commodity'), how='right').reset_index().set_index('id_client').join(df_clients[my_cl_cols_eng]).reset_index()
     dm1.rename(columns = {'level_0': 'id_client', 'index':'id_commodity'}, inplace=True)
 
@@ -327,7 +325,7 @@ with tab_graphs:
 # show df
 with tab_df:
     st.markdown('# Output DataFrames')
-
+    st.write("dm shape:", dm1.shape)
     st.markdown('### Price:')
     st.table(pivot_price)
     st.markdown('### Cost:')
@@ -335,7 +333,6 @@ with tab_df:
     st.markdown('### Volume:')
     st.table(pivot_vol)
 
-    st.write("dm shape:", dm1.shape)
 
 # debug info
 with tab_params:
@@ -351,7 +348,8 @@ with tab_params:
 
 
 ## ------ EXPORT TO EXCEL ------
-def calc_export():
+@st.experimental_memo
+def calc_export(dept=my_dept, channel=my_channel, brand=my_brand, manager=my_manager, group=my_group, mark=my_mark):
     strIO = io.BytesIO()
     with pd.ExcelWriter(strIO, engine='xlsxwriter') as writer:
         sheet_name = 'product-client'
@@ -375,10 +373,10 @@ def calc_export():
     strIO.seek(0)
     return strIO
 
-# st.sidebar.markdown('---')
-# st.sidebar.download_button( label="💾 Export to excel", 
-#                             data=calc_export(),
-#                             file_name='profit_analysis.xlsx',
-#                             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-#                         )
-# st.sidebar.markdown('---')
+st.sidebar.markdown('---')
+st.sidebar.download_button( label="💾 Export to excel", 
+                            data=calc_export(),
+                            file_name='profit_analysis.xlsx',
+                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        )
+st.sidebar.markdown('---')
