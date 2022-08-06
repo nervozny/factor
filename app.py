@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-# import plotly.graph_objects as go
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 import seaborn as sns
 import io
@@ -300,26 +300,100 @@ with tab_graphs:
     log(f"took {time.time() - start_time} seconds")
 
     # DRAWING
-    plt.style.use('ggplot')
-    fig, ax = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
-    
-    sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
-    sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
-    sns.heatmap(pivot_vol, ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt=".0", linewidths=.5)
+    drawing_method = st.radio(label="Drawing method:", options=['Seaborn', 'Plotly'], index=0)
 
-    ax[0].set_title(f'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), c='#518cc8')
-    ax[1].set_title(f'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), c='#518cc8')
-    ax[2].set_title(f'Structure influence   ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), c='#518cc8')
-    
-    ax[0].set_xlabel(x_ax)
-    ax[1].set_xlabel(x_ax)
-    ax[2].set_xlabel(x_ax)
-    
-    ax[0].set_ylabel(y_ax)
-    ax[1].set_ylabel("")
-    ax[2].set_ylabel("")
+    if drawing_method=="Seaborn":
+        plt.style.use('ggplot')
+        fig, ax = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
+        
+        sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
+        sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt=".0f", linewidths=.5)
+        sns.heatmap(pivot_vol, ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt=".0", linewidths=.5)
 
-    st.pyplot(fig)
+        ax[0].set_title(f'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), c='#518cc8')
+        ax[1].set_title(f'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), c='#518cc8')
+        ax[2].set_title(f'Structure influence   ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), c='#518cc8')
+        
+        ax[0].set_xlabel(x_ax)
+        ax[1].set_xlabel(x_ax)
+        ax[2].set_xlabel(x_ax)
+        
+        ax[0].set_ylabel(y_ax)
+        ax[1].set_ylabel("")
+        ax[2].set_ylabel("")
+
+        st.pyplot(fig)
+    if drawing_method=="Plotly":
+        left_col, mid_col, right_col = st.columns(3)
+
+        with left_col:
+            data = go.Heatmap(
+                        x = pivot_price.columns.tolist(),
+                        y = pivot_price.index.tolist(),
+                        z = pivot_price.values.tolist(),
+                        zmid=0,
+                        xgap=3,
+                        ygap=3,
+                        colorscale='RdBu'            
+                    )
+            layout = go.Layout(                    
+                        title={'text':'Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()), 'xanchor':'left','yanchor':'bottom', 'y':0.87},
+                        titlefont=dict(size=20, color='#518cc8'),
+                        xaxis=dict(showgrid=False, tickangle = angle),
+                        yaxis=dict(showgrid=False, categoryorder='category descending'),
+                        font=dict(size=11),                   
+                        height= 550,
+                        width=550,
+                        margin=dict(l=0, b=0),                    
+                    )
+            fig = go.Figure(data=[data], layout=layout)
+            st.plotly_chart(fig, use_container_width=False)
+
+        with mid_col:
+            data = go.Heatmap(
+                        x = pivot_cost.columns.tolist(),
+                        y = pivot_cost.index.tolist(),
+                        z = pivot_cost.values.tolist(),
+                        zmid=0,
+                        xgap=3,
+                        ygap=3,
+                        colorscale='RdBu'            
+                    )
+            layout = go.Layout(                    
+                        title={'text':'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()), 'xanchor':'left','yanchor':'bottom', 'y':0.87},
+                        titlefont=dict(size=20, color='#518cc8'),
+                        xaxis=dict(showgrid=False, tickangle = angle),
+                        yaxis=dict(showgrid=False, categoryorder='category descending'),
+                        font=dict(size=11),                   
+                        height= 550,
+                        width=550,
+                        margin=dict(l=0, b=0),                    
+                    )
+            fig = go.Figure(data=[data], layout=layout)
+            st.plotly_chart(fig, use_container_width=False)
+
+        with right_col:
+            data = go.Heatmap(
+                        x = pivot_vol.columns.tolist(),
+                        y = pivot_vol.index.tolist(),
+                        z = pivot_vol.values.tolist(),
+                        zmid=0,
+                        xgap=3,
+                        ygap=3,
+                        colorscale='RdBu'            
+                    )
+            layout = go.Layout(                    
+                        title={'text':'Structure influence   ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()), 'xanchor':'left','yanchor':'bottom', 'y':0.87},
+                        titlefont=dict(size=20, color='#518cc8'),
+                        xaxis=dict(showgrid=False, tickangle = angle),
+                        yaxis=dict(showgrid=False, categoryorder='category descending'),
+                        font=dict(size=11),                   
+                        height= 550,
+                        width=550,
+                        margin=dict(l=0, b=0),                    
+                    )
+            fig = go.Figure(data=[data], layout=layout)
+            st.plotly_chart(fig, use_container_width=False)
 
 
 # show df
