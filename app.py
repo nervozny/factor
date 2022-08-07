@@ -1,3 +1,4 @@
+from calendar import c
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,9 +6,8 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-from matplotlib.ticker import EngFormatter
-fmt = EngFormatter(places=1)
 import seaborn as sns
+import altair as alt
 import io
 import time
 from datasets import DataSets
@@ -19,7 +19,7 @@ def log(s: str):
 
 ## -------------- SETTING LAYOUT ---------------
 st.set_page_config(layout="wide")
-tab_graphs, tab_df, tab_params = st.tabs(["Graphs", "DataFrame", "Parameters"])
+tab_graphs, tab_df, tab_params = st.tabs(["Graphs", "DataFrames", "Parameters"])
 
 ## ------------- DATA LOADING ------------
 @st.experimental_singleton
@@ -302,7 +302,7 @@ with tab_graphs:
     log(f"took {time.time() - start_time} seconds")
 
     # DRAWING
-    drawing_method = st.radio(label="Drawing method:", options=['Seaborn', 'Plotly'], index=1)
+    drawing_method = st.radio(label="Drawing method:", options=['Seaborn', 'Plotly', 'Altair'], index=2)
 
     if drawing_method=="Seaborn":
         plt.style.use('ggplot')
@@ -316,7 +316,8 @@ with tab_graphs:
         sns.heatmap(pivot_price, ax=ax[0], cmap='RdBu', cbar=False, annot=True, fmt='.0f', linewidths=.5)
         sns.heatmap(pivot_cost, ax=ax[1], cmap='RdBu', cbar=False, annot=True, fmt='.0f', linewidths=.5, yticklabels=False)
         sns.heatmap(pivot_vol.applymap(lambda x: x/1000), ax=ax[2], cmap='RdBu', cbar=False, annot=True, fmt='.1f', linewidths=.5, yticklabels=False)
-        
+        for t in ax[2].texts: t.set_text(t.get_text() + "k")
+
         ax[0].set_xlabel(x_ax)
         ax[1].set_xlabel(x_ax)
         ax[2].set_xlabel(x_ax + " (thousands)")
@@ -326,6 +327,7 @@ with tab_graphs:
         ax[2].set_ylabel("")
 
         st.pyplot(fig)
+
     if drawing_method=="Plotly":
         left_col, mid_col, right_col = st.columns(3)
 
@@ -397,6 +399,52 @@ with tab_graphs:
                     )
             fig = go.Figure(data=[data], layout=layout)
             st.plotly_chart(fig, use_container_width=False)
+
+    if drawing_method=="Altair":
+        x, y, v1, v2, v3 = aa.columns[0], aa.columns[1], aa.columns[2], bb.columns[2], cc.columns[2]
+
+        facets = ['Price influence   ''{:,.0f}'.format(dm1['Сhange in profit due to price'].sum()),
+                  'Cost influence   ''{:,.0f}'.format(dm1['Сhange in profit due to cost'].sum()),
+                  'Structure influence  ''{:,.0f}'.format(dm1['Сhange in profit due to structure'].sum()) ]
+
+        aa['facet'], bb['facet'], cc['facet'] = facets
+        decimals = 1
+        aa[v1], bb[v2], cc[v3] = aa[v1].round(decimals), bb[v2].round(decimals), cc[v3].round(decimals)
+
+        aa.rename(columns={v1: 'value'}, inplace=True)
+        bb.rename(columns={v2: 'value'}, inplace=True)
+        cc.rename(columns={v3: 'value'}, inplace=True)
+
+        tt = pd.concat([aa, bb, cc])
+
+        l_bound, u_bound = min(tt['value']), max(tt['value'])
+        
+        heatmap = alt.Chart(tt).mark_rect(stroke='lightgray').encode(
+            alt.X(x, type='ordinal'),
+            alt.Y(y, type='ordinal'),
+            alt.Color('value:Q', scale=alt.Scale(
+                                    clamp=True,
+                                    domainMid=0,
+                                    scheme=alt.SchemeParams(name='redblue'),
+                                    ), #legend=None
+                                    ),
+            tooltip=[x, y, 'value']
+        ).properties(
+            width=400,
+            height=400
+        ).facet(
+            column=alt.Column('facet', sort=facets, 
+                        header=alt.Header(labelFontSize=20, title=None, labelColor='#518cc8'))
+        ).resolve_scale(
+            x="independent",
+            y="independent",
+            color='independent'
+        ).configure_scale(
+            bandPaddingInner=0.01
+        ).configure_view(
+            stroke=None
+        ).interactive()
+        st.altair_chart(heatmap)
 
 
 # show df
