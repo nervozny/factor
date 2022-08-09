@@ -53,8 +53,8 @@ class DataSets():
         if marks:
             d_a = d_a.loc[d_a.id_mark.isin(marks)]
 
-        d_b = d_a.loc[(d_a.DocumentDate >= dt_base_start) & (d_a.DocumentDate <= dt_base_end)] #.copy(deep=True)
-        d_f = d_a.loc[(d_a.DocumentDate >= dt_fact_start) & (d_a.DocumentDate <= dt_fact_end)] #.copy(deep=True)
+        d_b = d_a.loc[(d_a.DocumentDate >= dt_base_start) & (d_a.DocumentDate <= dt_base_end)].copy(deep=True)
+        d_f = d_a.loc[(d_a.DocumentDate >= dt_fact_start) & (d_a.DocumentDate <= dt_fact_end)].copy(deep=True)
 
         d_b = d_b.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
         d_f = d_f.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)

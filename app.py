@@ -197,3 +197,6 @@ except IndexError as ie:
 
 except ValueError as ve:
     st.error("You should choose different values for X and Y axes.")
+
+except AttributeError as ae:
+    pass
