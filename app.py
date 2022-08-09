@@ -62,8 +62,17 @@ dt_fact = st.sidebar.date_input("📆 Fact Interval",
 ## ----------------- SIDEBAR AXES ---------------------
 st.sidebar.markdown('---')
 
-x_ax = st.sidebar.selectbox("➡️ what's on the X axis?", list(datasets.axes_options.keys()), 2)
-y_ax = st.sidebar.selectbox("⬆️ what's on the Y axis?", list(datasets.axes_options.keys()), 0)
+axes_options = {
+    'Branch': 'branch', 
+    'Channel': 'Channel', 
+    'Brand': 'Brand', 
+    'Group': 'Product_group', 
+    'Mark': 'Mark', 
+    'Manager': 'Manager_Marketing'
+}
+
+x_ax = st.sidebar.selectbox("➡️ what's on the X axis?", list(axes_options.keys()), 2)
+y_ax = st.sidebar.selectbox("⬆️ what's on the Y axis?", list(axes_options.keys()), 0)
 
 
 ## -------------- SIDEBAR FILTERS -------------
