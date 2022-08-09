@@ -23,7 +23,7 @@ def load_data():
     """
     if 'datasets' not in st.session_state:
         log("Reloading datasets...")
-        return DataSets(st.session_state)
+        return DataSets()
 
 datasets = load_data()
 st.session_state['datasets'] = datasets

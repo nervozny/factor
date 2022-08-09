@@ -3,7 +3,7 @@ import numpy as np
 import streamlit as st
 
 class DataSets():
-    def __init__(self, ss: st.session_state) -> None:
+    def __init__(self) -> None:
         self.df_sales = pd.read_parquet('data/df-sales.pq')
         self.df_products = pd.read_parquet('data/products.pq')
         self.df_clients = pd.read_parquet('data/clients.pq')
