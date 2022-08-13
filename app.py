@@ -113,7 +113,7 @@ try:
         my_mark = [k for k, v in mark_dict.items() if v in m_mark]
         
         # filtering
-        dm = datasets.filter_data(my_channel, my_dept, my_brand, my_manager, my_group, my_mark, date_base_start, date_base_end_convert, date_fact_start, date_fact_end_convert)
+        dm = datasets.filter_data(my_channel, my_dept, my_brand, my_manager, my_group, my_mark, dt_base[0], dt_base[1], dt_fact[0], dt_fact[1])
         dm1, pivot_price, pivot_cost, pivot_vol = datasets.preprocess_data(dm, df_products, df_clients, branch_dict, x_ax, y_ax)
         renderer = Render(datasets)
 
