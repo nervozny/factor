@@ -38,7 +38,12 @@ class DataSets():
         Parameters are lists of values
         """
         # filtering
-        d_a = self.df_sales
+        dt_base_start = pd.Timestamp(dt_base_start.year, dt_base_start.month, dt_base_start.day, 0, 0, 0)
+        dt_fact_start = pd.Timestamp(dt_fact_start.year, dt_fact_start.month, dt_fact_start.day, 0, 0, 0)
+        date_base_end_convert = pd.Timestamp(dt_base_end.year, dt_base_end.month, dt_base_end.day, 23, 59, 59)
+        date_fact_end_convert = pd.Timestamp(dt_fact_end.year, dt_fact_end.month, dt_fact_end.day, 23, 59, 59)
+
+        d_a = self.df_sales # 2488250
 
         if channels:
             d_a = d_a.loc[d_a.id_channel.isin(channels)]
@@ -53,11 +58,11 @@ class DataSets():
         if marks:
             d_a = d_a.loc[d_a.id_mark.isin(marks)]
 
-        d_b = d_a.loc[(d_a.DocumentDate >= dt_base_start) & (d_a.DocumentDate <= dt_base_end)].copy(deep=True)
-        d_f = d_a.loc[(d_a.DocumentDate >= dt_fact_start) & (d_a.DocumentDate <= dt_fact_end)].copy(deep=True)
+        d_b = d_a.loc[(d_a.DocumentDate >= dt_base_start) & (d_a.DocumentDate <= date_base_end_convert)].copy(deep=True) # 24572
+        d_f = d_a.loc[(d_a.DocumentDate >= dt_fact_start) & (d_a.DocumentDate <= date_fact_end_convert)].copy(deep=True) # 10983
 
-        d_b = d_b.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
-        d_f = d_f.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index() #.copy(deep=True)
+        d_b = d_b.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index().copy(deep=True) # 5952
+        d_f = d_f.groupby(['id_commodity', 'id_client']).agg({'SalesAmount': 'sum', 'SalesCost': 'sum', 'SalesQty': 'sum', 'id_branch': 'max'}).reset_index().copy(deep=True) # 3664
 
         dm = pd.merge(d_b, d_f, left_on=['id_commodity', 'id_client'], right_on=['id_commodity', 'id_client'], how='outer', suffixes=('_base', '_fact'))  
         return dm
